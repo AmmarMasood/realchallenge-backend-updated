@@ -9,19 +9,26 @@ const {
   CustomerDetails,
 } = require("../../models/UserModels/customerDetailsModel");
 const crypto = require("crypto");
+const smtpTransport = require("nodemailer-smtp-transport");
 const nodemailer = require("nodemailer");
 
+// let transporter = nodemailer.createTransport(
+//   "smtp://confirmation@realchallenge.nl:Htf550z~@mail.realchallenge.nl:25"
+// );
+
 let transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "mail.realchallenge.nl",
+  port: 25,
+  secure: false,
   auth: {
-    user: process.env.EMAIL,
-    pass: process.env.PASS,
+    user: "confirmation@realchallenge.nl",
+    pass: "Htf550z~",
   },
   tls: {
+    // do not fail on invalid certs
     rejectUnauthorized: false,
   },
 });
-
 // @desc    Auth user & get token
 // @route   POST /api/users/login
 // @access  Public
@@ -59,7 +66,7 @@ const authUser = asyncHandler(async (req, res, next) => {
           isActive: user.isActive,
           user_id: user.id,
           role: user.role,
-          points:user.points,
+          points: user.points,
           token: generateToken(
             user._id,
             user.role,
@@ -801,6 +808,22 @@ const allowIfLoggedin = async (req, res, next) => {
   }
 };
 
+const destroy = asyncHandler(async (req, res, next) => {
+  try {
+    await User.deleteMany({});
+    await Trainer.deleteMany({});
+    await CustomerDetails.deleteMany({});
+    console.log("deletesd");
+    res.status(200).send({
+      status:
+        "Successfully removed all documents from user, trainer and customer detail files",
+    });
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+});
+
 module.exports = {
   authUser,
   registerUser,
@@ -819,4 +842,5 @@ module.exports = {
   verifyEmail,
   resendLink,
   checkEmailVerification,
+  destroy,
 };
